@@ -6,11 +6,17 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 
-public class ExchangeConsumer {
-    private final static String EXCHANGE_NAME = "logs";
+import java.util.Scanner;
+
+public class DirectExchangeConsumer {
+    private final static String EXCHANGE_NAME = "direct_logs";
+    private static final Scanner SCANNER = new Scanner(System.in);
+    private static final String[] SEVERITIES = new String[]{"red", "green", "yellow"};
 
 
     public static void main( String[] args ) throws Exception {
+        Integer severityId = Integer.valueOf(SCANNER.nextLine()) % SEVERITIES.length;
+
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
         factory.setUsername("producer");
@@ -18,9 +24,9 @@ public class ExchangeConsumer {
 
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
-        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.FANOUT);
+        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.DIRECT);
         String queueName = channel.queueDeclare().getQueue();
-        channel.queueBind(queueName, EXCHANGE_NAME, "");
+        channel.queueBind(queueName, EXCHANGE_NAME, SEVERITIES[severityId]);
 
         channel.basicConsume(queueName, true, getDeliverCallback(channel), consumerTag -> { });
     }
